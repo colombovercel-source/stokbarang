@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Manager Pro</title>
+
+<!-- Bootstrap 5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    background: #f8f9fa;
+}
+
+.card {
+    border-radius: 15px;
+}
+
+.table th {
+    background-color: #f1f3f5;
+}
+
+.total-box {
+    font-size: 22px;
+    font-weight: bold;
+    color: #198754;
+}
+
+.btn-sm {
+    margin: 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="container py-4">
+<h2 class="text-center mb-4">📦 Stock Manager Pro</h2>
+
+<div class="row g-4">
+
+<!-- Form Produk -->
+<div class="col-md-6">
+<div class="card shadow-sm p-4">
+<h5 class="mb-3">Tambah / Edit Produk</h5>
+<form id="productForm">
+<input type="hidden" id="editIndex">
+<div class="mb-2">
+<input type="text" id="name" class="form-control" placeholder="Nama Barang" required>
+</div>
+<div class="mb-2">
+<input type="number" id="price" class="form-control" placeholder="Harga" required>
+</div>
+<div class="mb-2">
+<input type="number" id="stock" class="form-control" placeholder="Stok Awal" required>
+</div>
+<button class="btn btn-primary w-100">Simpan Produk</button>
+</form>
+</div>
+</div>
+
+<!-- Form Penjualan -->
+<div class="col-md-6">
+<div class="card shadow-sm p-4">
+<h5 class="mb-3">Catat Penjualan</h5>
+<form id="saleForm">
+<div class="mb-2">
+<select id="productSelect" class="form-select"></select>
+</div>
+<div class="mb-2">
+<input type="number" id="qty" class="form-control" placeholder="Jumlah Terjual" required>
+</div>
+<button class="btn btn-success w-100">Catat Penjualan</button>
+</form>
+</div>
+</div>
+
+<!-- Tabel Produk -->
+<div class="col-12">
+<div class="card shadow-sm p-4">
+<h5>Daftar Produk</h5>
+<div class="table-responsive">
+<table class="table table-bordered text-center align-middle">
+<thead>
+<tr>
+<th>Nama</th>
+<th>Harga</th>
+<th>Stok</th>
+<th>Aksi</th>
+</tr>
+</thead>
+<tbody id="productTable"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- Riwayat -->
+<div class="col-12">
+<div class="card shadow-sm p-4">
+<h5>Riwayat Transaksi</h5>
+<div class="table-responsive">
+<table class="table table-striped text-center">
+<thead>
+<tr>
+<th>Waktu</th>
+<th>Produk</th>
+<th>Jumlah</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody id="historyTable"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- Total -->
+<div class="col-12">
+<div class="card shadow-sm p-4 text-center">
+<div class="total-box">
+Total Pendapatan: Rp <span id="revenue">0</span>
+</div>
+</div>
+</div>
+
+<!-- Grafik -->
+<div class="col-12">
+<div class="card shadow-sm p-4">
+<h5>📊 Grafik Penjualan per Produk</h5>
+<canvas id="salesChart"></canvas>
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+const state = {
+    products: JSON.parse(localStorage.getItem("products")) || [],
+    revenue: parseInt(localStorage.getItem("revenue")) || 0,
+    history: JSON.parse(localStorage.getItem("history")) || []
+};
+
+let chart;
+
+function save() {
+    localStorage.setItem("products", JSON.stringify(state.products));
+    localStorage.setItem("revenue", state.revenue);
+    localStorage.setItem("history", JSON.stringify(state.history));
+}
+
+function formatRupiah(num) {
+    return num.toLocaleString("id-ID");
+}
+
+function render() {
+    const productTable = document.getElementById("productTable");
+    const productSelect = document.getElementById("productSelect");
+    const historyTable = document.getElementById("historyTable");
+
+    productTable.innerHTML = "";
+    productSelect.innerHTML = "";
+    historyTable.innerHTML = "";
+
+    state.products.forEach((p, index) => {
+        productTable.innerHTML += `
+        <tr>
+            <td>${p.name}</td>
+            <td>Rp ${formatRupiah(p.price)}</td>
+            <td>${p.stock}</td>
+            <td>
+                <button class="btn btn-warning btn-sm" onclick="editProduct(${index})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteProduct(${index})">Hapus</button>
+            </td>
+        </tr>
+        `;
+
+        productSelect.innerHTML += `
+        <option value="${index}">${p.name}</option>
+        `;
+    });
+
+    state.history.forEach(h => {
+        historyTable.innerHTML += `
+        <tr>
+            <td>${h.time}</td>
+            <td>${h.name}</td>
+            <td>${h.qty}</td>
+            <td>Rp ${formatRupiah(h.total)}</td>
+        </tr>
+        `;
+    });
+
+    document.getElementById("revenue").textContent = formatRupiah(state.revenue);
+
+    updateChart();
+}
+
+function updateChart() {
+    const salesData = {};
+
+    state.history.forEach(h => {
+        if (!salesData[h.name]) salesData[h.name] = 0;
+        salesData[h.name] += h.qty;
+    });
+
+    const labels = Object.keys(salesData);
+    const data = Object.values(salesData);
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(document.getElementById("salesChart"), {
+        type: "bar",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Jumlah Terjual",
+                data: data,
+                backgroundColor: "#0d6efd"
+            }]
+        }
+    });
+}
+
+document.getElementById("productForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const name = document.getElementById("name").value.trim();
+    const price = parseInt(document.getElementById("price").value);
+    const stock = parseInt(document.getElementById("stock").value);
+    const editIndex = document.getElementById("editIndex").value;
+
+    if (!name || price <= 0 || stock < 0) return;
+
+    if (editIndex === "") {
+        state.products.push({ name, price, stock });
+    } else {
+        state.products[editIndex] = { name, price, stock };
+    }
+
+    this.reset();
+    document.getElementById("editIndex").value = "";
+    save();
+    render();
+});
+
+document.getElementById("saleForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const index = document.getElementById("productSelect").value;
+    const qty = parseInt(document.getElementById("qty").value);
+
+    if (qty <= 0) return;
+    if (state.products[index].stock < qty) {
+        alert("Stok tidak cukup!");
+        return;
+    }
+
+    state.products[index].stock -= qty;
+    const totalSale = state.products[index].price * qty;
+    state.revenue += totalSale;
+
+    state.history.unshift({
+        time: new Date().toLocaleString(),
+        name: state.products[index].name,
+        qty,
+        total: totalSale
+    });
+
+    save();
+    render();
+    this.reset();
+});
+
+function editProduct(index) {
+    const p = state.products[index];
+    document.getElementById("name").value = p.name;
+    document.getElementById("price").value = p.price;
+    document.getElementById("stock").value = p.stock;
+    document.getElementById("editIndex").value = index;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteProduct(index) {
+    if (!confirm("Yakin hapus produk ini?")) return;
+    state.products.splice(index, 1);
+    save();
+    render();
+}
+
+render();
+</script>
+
+</body>
+</html>
