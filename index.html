@@ -3,44 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stock Manager Mobile App</title>
+<title>Stock Manager Futuristic - Teks Hitam</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
 <style>
 body {
-    background: #f8f9fa;
-    margin-bottom: 70px; /* Space for bottom nav */
+    background: linear-gradient(145deg, #a0c4ff, #bdb2ff, #ffc6ff); /* Latar futuristik */
+    color: #000; /* Semua teks hitam */
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 70px; /* space for bottom nav */
 }
 .card {
-    border-radius: 15px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.85); /* card terang */
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    transition: transform 0.3s, box-shadow 0.3s;
+    color: #000;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
 }
 .table th {
-    background-color: #f1f3f5;
+    background-color: rgba(200,200,200,0.3);
+}
+.table td, .table th {
+    color: #000;
 }
 .total-box {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
     color: #198754;
 }
 .btn-sm {
     margin: 2px;
+    transition: transform 0.2s;
+    color: #000;
+}
+.btn-sm:hover {
+    transform: scale(1.1);
 }
 .section {
     display: none;
     padding-bottom: 10px;
+    animation: fadeIn 0.5s ease;
+    color: #000;
 }
 .show {
     display: block;
 }
-.toast-container {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    z-index: 9999;
+@keyframes fadeIn {
+    from {opacity: 0; transform: translateY(10px);}
+    to {opacity:1; transform: translateY(0);}
+}
+.toast-container .toast {
+    color: #000;
+    background: rgba(255,255,255,0.9);
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+    transition: all 0.5s ease;
+}
+.toast.show-toast {
+    transform: translateX(0);
+    opacity: 1;
+}
+.toast.hide-toast {
+    transform: translateX(100%);
+    opacity: 0;
 }
 
 /* Bottom Navigation */
@@ -49,11 +86,11 @@ body {
     bottom: 0;
     width: 100%;
     height: 60px;
-    background-color: #fff;
-    border-top: 1px solid #ddd;
+    background-color: rgba(255,255,255,0.9);
     display: flex;
     justify-content: space-around;
     align-items: center;
+    border-top: 1px solid #ccc;
     z-index: 999;
 }
 .bottom-nav button {
@@ -61,9 +98,10 @@ body {
     border: none;
     flex-direction: column;
     font-size: 12px;
-    color: #666;
+    color: #555;
     display: flex;
     align-items: center;
+    transition: color 0.3s;
 }
 .bottom-nav button.active {
     color: #0d6efd;
@@ -73,13 +111,19 @@ body {
     font-size: 20px;
     margin-bottom: 2px;
 }
+.btn-gradient {
+    transition: transform 0.3s;
+}
+.btn-gradient:hover {
+    transform: scale(1.05);
+}
 </style>
 </head>
 <body>
 
 <div class="container py-3">
 
-<h2 class="text-center mb-3">📦 Stock Manager App</h2>
+<h2 class="text-center mb-3">📦 Stock Barang ku</h2>
 
 <!-- Tambah / Edit Produk -->
 <div class="section card shadow-sm p-3" id="addProduct">
@@ -95,7 +139,7 @@ body {
 <div class="mb-2">
 <input type="number" id="stock" class="form-control" placeholder="Stok Awal" required>
 </div>
-<button class="btn btn-primary w-100">Simpan Produk</button>
+<button class="btn btn-gradient w-100" style="background: linear-gradient(90deg,#00ffcc,#0099ff); color:#000;">Simpan Produk</button>
 </form>
 </div>
 
@@ -109,7 +153,7 @@ body {
 <div class="mb-2">
 <input type="number" id="qty" class="form-control" placeholder="Jumlah Terjual" required>
 </div>
-<button class="btn btn-success w-100">Catat Penjualan</button>
+<button class="btn btn-gradient w-100" style="background: linear-gradient(90deg,#00ffcc,#0099ff); color:#000;">Catat Penjualan</button>
 </form>
 </div>
 
@@ -155,7 +199,7 @@ Total Pendapatan: Rp <span id="revenue">0</span>
 </div>
 </div>
 <div class="card shadow-sm p-3">
-<h5>📊 Grafik Penjualan</h5>
+<h5>📊 Grafik Penjualan Interaktif</h5>
 <canvas id="salesChart"></canvas>
 </div>
 </div>
@@ -172,9 +216,6 @@ Total Pendapatan: Rp <span id="revenue">0</span>
 <button id="tabList" onclick="switchTab('productList', this)"><i class="bi bi-box-seam"></i>Produk</button>
 <button id="tabHistory" onclick="switchTab('historyChart', this)"><i class="bi bi-bar-chart"></i>Riwayat</button>
 </div>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
 <script>
 // State
@@ -197,7 +238,7 @@ function switchTab(sectionId, btn){
 function showToast(message, type="success") {
     const toastId = "t" + Date.now();
     const toastHTML = `
-    <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+    <div id="${toastId}" class="toast align-items-center border-0 mb-2 show-toast" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
         <div class="toast-body">${message}</div>
         <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('${toastId}').remove()"></button>
@@ -205,7 +246,12 @@ function showToast(message, type="success") {
     </div>`;
     const container = document.getElementById('toastContainer');
     container.insertAdjacentHTML('beforeend', toastHTML);
-    setTimeout(()=>{document.getElementById(toastId)?.remove()},3000);
+    setTimeout(()=>{
+        const t = document.getElementById(toastId);
+        t.classList.remove("show-toast");
+        t.classList.add("hide-toast");
+        setTimeout(()=> t.remove(),500);
+    },3000);
 }
 
 // Save
@@ -261,7 +307,7 @@ function render() {
     updateChart();
 }
 
-// Update Chart
+// Update Chart with interactivity
 function updateChart() {
     const salesData = {};
     state.history.forEach(h => {
@@ -276,7 +322,27 @@ function updateChart() {
         type:"bar",
         data: {
             labels: labels,
-            datasets: [{label:"Jumlah Terjual", data:data, backgroundColor:"#0d6efd"}]
+            datasets: [{
+                label:"Jumlah Terjual",
+                data:data,
+                backgroundColor: labels.map(()=> 'rgba(0,255,204,0.7)'),
+                borderColor: labels.map(()=> 'rgba(0,255,204,1)'),
+                borderWidth: 1
+            }]
+        },
+        options:{
+            responsive:true,
+            plugins:{
+                tooltip:{mode:'index', intersect:false},
+                zoom:{
+                    zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x'}
+                }
+            },
+            interaction:{mode:'nearest', axis:'x', intersect:false},
+            scales:{
+                y:{beginAtZero:true, ticks:{color:'#000'}},
+                x:{ticks:{color:'#000'}}
+            }
         }
     });
 }
