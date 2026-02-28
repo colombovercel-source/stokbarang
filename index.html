@@ -3,49 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stock Manager Pro</title>
+<title>Stock Manager Mobile App</title>
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
     background: #f8f9fa;
+    margin-bottom: 70px; /* Space for bottom nav */
 }
-
 .card {
     border-radius: 15px;
 }
-
 .table th {
     background-color: #f1f3f5;
 }
-
 .total-box {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: bold;
     color: #198754;
 }
-
 .btn-sm {
     margin: 2px;
+}
+.section {
+    display: none;
+    padding-bottom: 10px;
+}
+.show {
+    display: block;
+}
+.toast-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 9999;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 999;
+}
+.bottom-nav button {
+    background: none;
+    border: none;
+    flex-direction: column;
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    align-items: center;
+}
+.bottom-nav button.active {
+    color: #0d6efd;
+    font-weight: bold;
+}
+.bottom-nav i {
+    font-size: 20px;
+    margin-bottom: 2px;
 }
 </style>
 </head>
 <body>
 
-<div class="container py-4">
-<h2 class="text-center mb-4">📦 Stock Manager Pro</h2>
+<div class="container py-3">
 
-<div class="row g-4">
+<h2 class="text-center mb-3">📦 Stock Manager App</h2>
 
-<!-- Form Produk -->
-<div class="col-md-6">
-<div class="card shadow-sm p-4">
-<h5 class="mb-3">Tambah / Edit Produk</h5>
+<!-- Tambah / Edit Produk -->
+<div class="section card shadow-sm p-3" id="addProduct">
+<h5>Tambah / Edit Produk</h5>
 <form id="productForm">
 <input type="hidden" id="editIndex">
 <div class="mb-2">
@@ -60,12 +98,10 @@ body {
 <button class="btn btn-primary w-100">Simpan Produk</button>
 </form>
 </div>
-</div>
 
-<!-- Form Penjualan -->
-<div class="col-md-6">
-<div class="card shadow-sm p-4">
-<h5 class="mb-3">Catat Penjualan</h5>
+<!-- Catat Penjualan -->
+<div class="section card shadow-sm p-3" id="saleProduct">
+<h5>Catat Penjualan</h5>
 <form id="saleForm">
 <div class="mb-2">
 <select id="productSelect" class="form-select"></select>
@@ -76,11 +112,9 @@ body {
 <button class="btn btn-success w-100">Catat Penjualan</button>
 </form>
 </div>
-</div>
 
-<!-- Tabel Produk -->
-<div class="col-12">
-<div class="card shadow-sm p-4">
+<!-- Daftar Produk -->
+<div class="section card shadow-sm p-3" id="productList">
 <h5>Daftar Produk</h5>
 <div class="table-responsive">
 <table class="table table-bordered text-center align-middle">
@@ -96,11 +130,10 @@ body {
 </table>
 </div>
 </div>
-</div>
 
-<!-- Riwayat -->
-<div class="col-12">
-<div class="card shadow-sm p-4">
+<!-- Riwayat & Grafik -->
+<div class="section" id="historyChart">
+<div class="card shadow-sm p-3 mb-3">
 <h5>Riwayat Transaksi</h5>
 <div class="table-responsive">
 <table class="table table-striped text-center">
@@ -116,47 +149,78 @@ body {
 </table>
 </div>
 </div>
-</div>
-
-<!-- Total -->
-<div class="col-12">
-<div class="card shadow-sm p-4 text-center">
+<div class="card shadow-sm p-3 text-center mb-3">
 <div class="total-box">
 Total Pendapatan: Rp <span id="revenue">0</span>
 </div>
 </div>
-</div>
-
-<!-- Grafik -->
-<div class="col-12">
-<div class="card shadow-sm p-4">
-<h5>📊 Grafik Penjualan per Produk</h5>
+<div class="card shadow-sm p-3">
+<h5>📊 Grafik Penjualan</h5>
 <canvas id="salesChart"></canvas>
 </div>
 </div>
 
-</div>
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
 </div>
 
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+<button id="tabAdd" onclick="switchTab('addProduct', this)" class="active"><i class="bi bi-plus-circle"></i>Tambah</button>
+<button id="tabSale" onclick="switchTab('saleProduct', this)"><i class="bi bi-cart-check"></i>Jual</button>
+<button id="tabList" onclick="switchTab('productList', this)"><i class="bi bi-box-seam"></i>Produk</button>
+<button id="tabHistory" onclick="switchTab('historyChart', this)"><i class="bi bi-bar-chart"></i>Riwayat</button>
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
 <script>
+// State
 const state = {
     products: JSON.parse(localStorage.getItem("products")) || [],
     revenue: parseInt(localStorage.getItem("revenue")) || 0,
     history: JSON.parse(localStorage.getItem("history")) || []
 };
-
 let chart;
 
+// Switch Tab
+function switchTab(sectionId, btn){
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('show'));
+    document.getElementById(sectionId).classList.add('show');
+    document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// Toast Notification
+function showToast(message, type="success") {
+    const toastId = "t" + Date.now();
+    const toastHTML = `
+    <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">${message}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('${toastId}').remove()"></button>
+      </div>
+    </div>`;
+    const container = document.getElementById('toastContainer');
+    container.insertAdjacentHTML('beforeend', toastHTML);
+    setTimeout(()=>{document.getElementById(toastId)?.remove()},3000);
+}
+
+// Save
 function save() {
     localStorage.setItem("products", JSON.stringify(state.products));
     localStorage.setItem("revenue", state.revenue);
     localStorage.setItem("history", JSON.stringify(state.history));
 }
 
+// Format Rupiah
 function formatRupiah(num) {
     return num.toLocaleString("id-ID");
 }
 
+// Render UI
 function render() {
     const productTable = document.getElementById("productTable");
     const productSelect = document.getElementById("productSelect");
@@ -178,10 +242,7 @@ function render() {
             </td>
         </tr>
         `;
-
-        productSelect.innerHTML += `
-        <option value="${index}">${p.name}</option>
-        `;
+        productSelect.innerHTML += `<option value="${index}">${p.name}</option>`;
     });
 
     state.history.forEach(h => {
@@ -200,65 +261,55 @@ function render() {
     updateChart();
 }
 
+// Update Chart
 function updateChart() {
     const salesData = {};
-
     state.history.forEach(h => {
         if (!salesData[h.name]) salesData[h.name] = 0;
         salesData[h.name] += h.qty;
     });
-
     const labels = Object.keys(salesData);
     const data = Object.values(salesData);
 
-    if (chart) chart.destroy();
-
+    if(chart) chart.destroy();
     chart = new Chart(document.getElementById("salesChart"), {
-        type: "bar",
+        type:"bar",
         data: {
             labels: labels,
-            datasets: [{
-                label: "Jumlah Terjual",
-                data: data,
-                backgroundColor: "#0d6efd"
-            }]
+            datasets: [{label:"Jumlah Terjual", data:data, backgroundColor:"#0d6efd"}]
         }
     });
 }
 
+// Add/Edit Product
 document.getElementById("productForm").addEventListener("submit", function(e){
     e.preventDefault();
-
     const name = document.getElementById("name").value.trim();
     const price = parseInt(document.getElementById("price").value);
     const stock = parseInt(document.getElementById("stock").value);
     const editIndex = document.getElementById("editIndex").value;
 
-    if (!name || price <= 0 || stock < 0) return;
+    if(!name || price <=0 || stock<0) return;
 
-    if (editIndex === "") {
-        state.products.push({ name, price, stock });
-    } else {
-        state.products[editIndex] = { name, price, stock };
-    }
+    if(editIndex==="") state.products.push({name,price,stock});
+    else state.products[editIndex] = {name,price,stock};
 
     this.reset();
-    document.getElementById("editIndex").value = "";
+    document.getElementById("editIndex").value="";
     save();
     render();
+    showToast("Produk berhasil disimpan!");
+    switchTab('productList', document.getElementById('tabList'));
 });
 
+// Catat Penjualan
 document.getElementById("saleForm").addEventListener("submit", function(e){
     e.preventDefault();
-
     const index = document.getElementById("productSelect").value;
     const qty = parseInt(document.getElementById("qty").value);
 
-    if (qty <= 0) return;
-    if (state.products[index].stock < qty) {
-        alert("Stok tidak cukup!");
-        return;
-    }
+    if(qty<=0) return;
+    if(state.products[index].stock < qty){ alert("Stok tidak cukup!"); return;}
 
     state.products[index].stock -= qty;
     const totalSale = state.products[index].price * qty;
@@ -274,24 +325,31 @@ document.getElementById("saleForm").addEventListener("submit", function(e){
     save();
     render();
     this.reset();
+    showToast("Penjualan dicatat!");
+    switchTab('historyChart', document.getElementById('tabHistory'));
 });
 
-function editProduct(index) {
+// Edit Product
+function editProduct(index){
     const p = state.products[index];
     document.getElementById("name").value = p.name;
     document.getElementById("price").value = p.price;
     document.getElementById("stock").value = p.stock;
     document.getElementById("editIndex").value = index;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    switchTab('addProduct', document.getElementById('tabAdd'));
 }
 
-function deleteProduct(index) {
-    if (!confirm("Yakin hapus produk ini?")) return;
-    state.products.splice(index, 1);
+// Delete Product
+function deleteProduct(index){
+    if(!confirm("Yakin hapus produk ini?")) return;
+    state.products.splice(index,1);
     save();
     render();
+    showToast("Produk dihapus!", "danger");
 }
 
+// Initial Render
+switchTab('addProduct', document.getElementById('tabAdd'));
 render();
 </script>
 
