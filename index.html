@@ -3,419 +3,313 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stock Manager Futuristic - Teks Hitam</title>
+<title>Stock Manager Futuristic - Order Status</title>
 
-<!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
-<!-- Bootstrap Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
 <style>
 body {
-    background: linear-gradient(145deg, #a0c4ff, #bdb2ff, #ffc6ff); /* Latar futuristik */
-    color: #000; /* Semua teks hitam */
+    background: linear-gradient(145deg, #a0c4ff, #bdb2ff, #ffc6ff);
+    color: #000;
     font-family: 'Inter', sans-serif;
-    margin-bottom: 70px; /* space for bottom nav */
+    margin-bottom: 70px;
 }
 .card {
     border-radius: 20px;
-    background: rgba(255,255,255,0.85); /* card terang */
+    background: rgba(255,255,255,0.85);
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-    transition: transform 0.3s, box-shadow 0.3s;
-    color: #000;
 }
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-}
-.table th {
-    background-color: rgba(200,200,200,0.3);
-}
-.table td, .table th {
-    color: #000;
-}
-.total-box {
-    font-size: 20px;
-    font-weight: bold;
-    color: #198754;
-}
-.btn-sm {
-    margin: 2px;
-    transition: transform 0.2s;
-    color: #000;
-}
-.btn-sm:hover {
-    transform: scale(1.1);
-}
-.section {
-    display: none;
-    padding-bottom: 10px;
-    animation: fadeIn 0.5s ease;
-    color: #000;
-}
-.show {
-    display: block;
-}
-@keyframes fadeIn {
-    from {opacity: 0; transform: translateY(10px);}
-    to {opacity:1; transform: translateY(0);}
-}
-.toast-container .toast {
-    color: #000;
-    background: rgba(255,255,255,0.9);
-    border-radius: 15px;
-    backdrop-filter: blur(5px);
-    transition: all 0.5s ease;
-}
-.toast.show-toast {
-    transform: translateX(0);
-    opacity: 1;
-}
-.toast.hide-toast {
-    transform: translateX(100%);
-    opacity: 0;
-}
+.section { display: none; padding-bottom: 10px; }
+.show { display: block; }
 
-/* Bottom Navigation */
 .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    height: 60px;
+    position: fixed; bottom:0; width:100%; height:60px;
     background-color: rgba(255,255,255,0.9);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    border-top: 1px solid #ccc;
-    z-index: 999;
+    display:flex; justify-content:space-around; align-items:center;
+    border-top:1px solid #ccc; z-index:999;
 }
-.bottom-nav button {
-    background: none;
-    border: none;
-    flex-direction: column;
-    font-size: 12px;
-    color: #555;
-    display: flex;
-    align-items: center;
-    transition: color 0.3s;
-}
-.bottom-nav button.active {
-    color: #0d6efd;
-    font-weight: bold;
-}
-.bottom-nav i {
-    font-size: 20px;
-    margin-bottom: 2px;
-}
-.btn-gradient {
-    transition: transform 0.3s;
-}
-.btn-gradient:hover {
-    transform: scale(1.05);
-}
+.bottom-nav button { background:none; border:none; flex-direction:column; font-size:12px; color:#555; display:flex; align-items:center;}
+.bottom-nav button.active { color:#0d6efd; font-weight:bold; }
+
+.filter-btn.active { background:#0d6efd; color:#fff; }
+.total-box { font-size:20px; font-weight:bold; color:#198754; }
 </style>
 </head>
 <body>
 
 <div class="container py-3">
-
 <h2 class="text-center mb-3">📦 Stock Barang ku</h2>
 
-<!-- Tambah / Edit Produk -->
-<div class="section card shadow-sm p-3" id="addProduct">
+<!-- Tambah Produk -->
+<div class="section card p-3" id="addProduct">
 <h5>Tambah / Edit Produk</h5>
 <form id="productForm">
 <input type="hidden" id="editIndex">
-<div class="mb-2">
-<input type="text" id="name" class="form-control" placeholder="Nama Barang" required>
-</div>
-<div class="mb-2">
-<input type="number" id="price" class="form-control" placeholder="Harga" required>
-</div>
-<div class="mb-2">
-<input type="number" id="stock" class="form-control" placeholder="Stok Awal" required>
-</div>
-<button class="btn btn-gradient w-100" style="background: linear-gradient(90deg,#00ffcc,#0099ff); color:#000;">Simpan Produk</button>
+<input type="text" id="name" class="form-control mb-2" placeholder="Nama Barang" required>
+<input type="number" id="price" class="form-control mb-2" placeholder="Harga" required>
+<input type="number" id="stock" class="form-control mb-2" placeholder="Stok Awal" required>
+<button class="btn w-100" style="background:linear-gradient(90deg,#00ffcc,#0099ff);color:#000;">Simpan Produk</button>
 </form>
 </div>
 
 <!-- Catat Penjualan -->
-<div class="section card shadow-sm p-3" id="saleProduct">
+<div class="section card p-3" id="saleProduct">
 <h5>Catat Penjualan</h5>
 <form id="saleForm">
-<div class="mb-2">
-<select id="productSelect" class="form-select"></select>
-</div>
-<div class="mb-2">
-<input type="number" id="qty" class="form-control" placeholder="Jumlah Terjual" required>
-</div>
-<button class="btn btn-gradient w-100" style="background: linear-gradient(90deg,#00ffcc,#0099ff); color:#000;">Catat Penjualan</button>
+<input type="text" id="buyerName" class="form-control mb-2" placeholder="Nama Pembeli" required>
+<select id="productSelect" class="form-select mb-2"></select>
+<input type="number" id="qty" class="form-control mb-2" placeholder="Jumlah Terjual" required>
+<button class="btn w-100" style="background:linear-gradient(90deg,#00ffcc,#0099ff);color:#000;">Catat Penjualan</button>
 </form>
 </div>
 
 <!-- Daftar Produk -->
-<div class="section card shadow-sm p-3" id="productList">
+<div class="section card p-3" id="productList">
 <h5>Daftar Produk</h5>
 <div class="table-responsive">
-<table class="table table-bordered text-center align-middle">
-<thead>
-<tr>
-<th>Nama</th>
-<th>Harga</th>
-<th>Stok</th>
-<th>Aksi</th>
-</tr>
-</thead>
+<table class="table table-bordered text-center">
+<thead><tr><th>Nama</th><th>Harga</th><th>Stok</th><th>Aksi</th></tr></thead>
 <tbody id="productTable"></tbody>
 </table>
 </div>
 </div>
 
-<!-- Riwayat & Grafik -->
+<!-- History -->
 <div class="section" id="historyChart">
-<div class="card shadow-sm p-3 mb-3">
+
+<div class="card p-3 mb-3">
 <h5>Riwayat Transaksi</h5>
 <div class="table-responsive">
 <table class="table table-striped text-center">
-<thead>
-<tr>
-<th>Waktu</th>
-<th>Produk</th>
-<th>Jumlah</th>
-<th>Total</th>
-</tr>
-</thead>
+<thead><tr><th>Waktu</th><th>Pembeli</th><th>Produk</th><th>Jumlah</th><th>Total</th></tr></thead>
 <tbody id="historyTable"></tbody>
 </table>
 </div>
 </div>
-<div class="card shadow-sm p-3 text-center mb-3">
-<div class="total-box">
-Total Pendapatan: Rp <span id="revenue">0</span>
+
+<div class="card p-3 mb-3 text-center">
+<div class="total-box">Total Pendapatan: Rp <span id="revenue">0</span></div>
+</div>
+
+<!-- ORDER -->
+<div class="card p-3 mb-3">
+<h5>Barang Dalam Proses / Order</h5>
+
+<div class="mb-2">
+<button class="btn btn-sm btn-outline-primary filter-btn active" onclick="filterOrders('pending', this)">Memesan</button>
+<button class="btn btn-sm btn-outline-success filter-btn" onclick="filterOrders('sold', this)">Terjual</button>
+<button class="btn btn-sm btn-outline-danger filter-btn" onclick="filterOrders('canceled', this)">Batal Beli</button>
+</div>
+
+<div class="table-responsive">
+<table class="table table-bordered text-center">
+<thead><tr><th>Produk</th><th>Pembeli</th><th>Jumlah</th><th>Status</th><th>Aksi</th></tr></thead>
+<tbody id="orderTable"></tbody>
+</table>
 </div>
 </div>
-<div class="card shadow-sm p-3">
-<h5>📊 Grafik Penjualan Interaktif</h5>
+
+<div class="card p-3">
+<h5>📊 Grafik Penjualan</h5>
 <canvas id="salesChart"></canvas>
 </div>
-</div>
-
-<!-- Toast -->
-<div class="toast-container" id="toastContainer"></div>
 
 </div>
+</div>
 
-<!-- Bottom Navigation -->
 <div class="bottom-nav">
-<button id="tabAdd" onclick="switchTab('addProduct', this)" class="active"><i class="bi bi-plus-circle"></i>Tambah</button>
-<button id="tabSale" onclick="switchTab('saleProduct', this)"><i class="bi bi-cart-check"></i>Jual</button>
-<button id="tabList" onclick="switchTab('productList', this)"><i class="bi bi-box-seam"></i>Produk</button>
-<button id="tabHistory" onclick="switchTab('historyChart', this)"><i class="bi bi-bar-chart"></i>Riwayat</button>
+<button onclick="switchTab('addProduct',this)" class="active"><i class="bi bi-plus-circle"></i>Tambah</button>
+<button onclick="switchTab('saleProduct',this)"><i class="bi bi-cart-check"></i>Jual</button>
+<button onclick="switchTab('productList',this)"><i class="bi bi-box-seam"></i>Produk</button>
+<button onclick="switchTab('historyChart',this)"><i class="bi bi-bar-chart"></i>Riwayat</button>
 </div>
 
 <script>
-// State
-const state = {
-    products: JSON.parse(localStorage.getItem("products")) || [],
-    revenue: parseInt(localStorage.getItem("revenue")) || 0,
-    history: JSON.parse(localStorage.getItem("history")) || []
+const state={
+products:JSON.parse(localStorage.getItem("products"))||[],
+revenue:parseInt(localStorage.getItem("revenue"))||0,
+history:JSON.parse(localStorage.getItem("history"))||[],
+orders:JSON.parse(localStorage.getItem("orders"))||[]
 };
+
 let chart;
+let currentFilter="pending";
 
-// Switch Tab
-function switchTab(sectionId, btn){
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('show'));
-    document.getElementById(sectionId).classList.add('show');
-    document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+function save(){
+localStorage.setItem("products",JSON.stringify(state.products));
+localStorage.setItem("revenue",state.revenue);
+localStorage.setItem("history",JSON.stringify(state.history));
+localStorage.setItem("orders",JSON.stringify(state.orders));
 }
 
-// Toast Notification
-function showToast(message, type="success") {
-    const toastId = "t" + Date.now();
-    const toastHTML = `
-    <div id="${toastId}" class="toast align-items-center border-0 mb-2 show-toast" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="d-flex">
-        <div class="toast-body">${message}</div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('${toastId}').remove()"></button>
-      </div>
-    </div>`;
-    const container = document.getElementById('toastContainer');
-    container.insertAdjacentHTML('beforeend', toastHTML);
-    setTimeout(()=>{
-        const t = document.getElementById(toastId);
-        t.classList.remove("show-toast");
-        t.classList.add("hide-toast");
-        setTimeout(()=> t.remove(),500);
-    },3000);
+function switchTab(id,btn){
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("show"));
+document.getElementById(id).classList.add("show");
+document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
 }
 
-// Save
-function save() {
-    localStorage.setItem("products", JSON.stringify(state.products));
-    localStorage.setItem("revenue", state.revenue);
-    localStorage.setItem("history", JSON.stringify(state.history));
+function filterOrders(status,btn){
+currentFilter=status;
+document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+render();
 }
 
-// Format Rupiah
-function formatRupiah(num) {
-    return num.toLocaleString("id-ID");
-}
+function render(){
 
-// Render UI
-function render() {
-    const productTable = document.getElementById("productTable");
-    const productSelect = document.getElementById("productSelect");
-    const historyTable = document.getElementById("historyTable");
-
-    productTable.innerHTML = "";
-    productSelect.innerHTML = "";
-    historyTable.innerHTML = "";
-
-    state.products.forEach((p, index) => {
-        productTable.innerHTML += `
-        <tr>
-            <td>${p.name}</td>
-            <td>Rp ${formatRupiah(p.price)}</td>
-            <td>${p.stock}</td>
-            <td>
-                <button class="btn btn-warning btn-sm" onclick="editProduct(${index})">Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteProduct(${index})">Hapus</button>
-            </td>
-        </tr>
-        `;
-        productSelect.innerHTML += `<option value="${index}">${p.name}</option>`;
-    });
-
-    state.history.forEach(h => {
-        historyTable.innerHTML += `
-        <tr>
-            <td>${h.time}</td>
-            <td>${h.name}</td>
-            <td>${h.qty}</td>
-            <td>Rp ${formatRupiah(h.total)}</td>
-        </tr>
-        `;
-    });
-
-    document.getElementById("revenue").textContent = formatRupiah(state.revenue);
-
-    updateChart();
-}
-
-// Update Chart with interactivity
-function updateChart() {
-    const salesData = {};
-    state.history.forEach(h => {
-        if (!salesData[h.name]) salesData[h.name] = 0;
-        salesData[h.name] += h.qty;
-    });
-    const labels = Object.keys(salesData);
-    const data = Object.values(salesData);
-
-    if(chart) chart.destroy();
-    chart = new Chart(document.getElementById("salesChart"), {
-        type:"bar",
-        data: {
-            labels: labels,
-            datasets: [{
-                label:"Jumlah Terjual",
-                data:data,
-                backgroundColor: labels.map(()=> 'rgba(0,255,204,0.7)'),
-                borderColor: labels.map(()=> 'rgba(0,255,204,1)'),
-                borderWidth: 1
-            }]
-        },
-        options:{
-            responsive:true,
-            plugins:{
-                tooltip:{mode:'index', intersect:false},
-                zoom:{
-                    zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x'}
-                }
-            },
-            interaction:{mode:'nearest', axis:'x', intersect:false},
-            scales:{
-                y:{beginAtZero:true, ticks:{color:'#000'}},
-                x:{ticks:{color:'#000'}}
-            }
-        }
-    });
-}
-
-// Add/Edit Product
-document.getElementById("productForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    const name = document.getElementById("name").value.trim();
-    const price = parseInt(document.getElementById("price").value);
-    const stock = parseInt(document.getElementById("stock").value);
-    const editIndex = document.getElementById("editIndex").value;
-
-    if(!name || price <=0 || stock<0) return;
-
-    if(editIndex==="") state.products.push({name,price,stock});
-    else state.products[editIndex] = {name,price,stock};
-
-    this.reset();
-    document.getElementById("editIndex").value="";
-    save();
-    render();
-    showToast("Produk berhasil disimpan!");
-    switchTab('productList', document.getElementById('tabList'));
+// Produk
+const productTable=document.getElementById("productTable");
+const productSelect=document.getElementById("productSelect");
+productTable.innerHTML="";
+productSelect.innerHTML="";
+state.products.forEach((p,i)=>{
+productTable.innerHTML+=`
+<tr>
+<td>${p.name}</td>
+<td>Rp ${p.price.toLocaleString()}</td>
+<td>${p.stock}</td>
+<td>
+<button class="btn btn-warning btn-sm" onclick="editProduct(${i})">Edit</button>
+<button class="btn btn-danger btn-sm" onclick="deleteProduct(${i})">Hapus</button>
+</td>
+</tr>`;
+productSelect.innerHTML+=`<option value="${i}">${p.name}</option>`;
 });
 
-// Catat Penjualan
-document.getElementById("saleForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    const index = document.getElementById("productSelect").value;
-    const qty = parseInt(document.getElementById("qty").value);
-
-    if(qty<=0) return;
-    if(state.products[index].stock < qty){ alert("Stok tidak cukup!"); return;}
-
-    state.products[index].stock -= qty;
-    const totalSale = state.products[index].price * qty;
-    state.revenue += totalSale;
-
-    state.history.unshift({
-        time: new Date().toLocaleString(),
-        name: state.products[index].name,
-        qty,
-        total: totalSale
-    });
-
-    save();
-    render();
-    this.reset();
-    showToast("Penjualan dicatat!");
-    switchTab('historyChart', document.getElementById('tabHistory'));
+// History
+const historyTable=document.getElementById("historyTable");
+historyTable.innerHTML="";
+state.history.forEach(h=>{
+historyTable.innerHTML+=`
+<tr>
+<td>${h.time}</td>
+<td>${h.buyer}</td>
+<td>${h.name}</td>
+<td>${h.qty}</td>
+<td>Rp ${h.total.toLocaleString()}</td>
+</tr>`;
 });
 
-// Edit Product
-function editProduct(index){
-    const p = state.products[index];
-    document.getElementById("name").value = p.name;
-    document.getElementById("price").value = p.price;
-    document.getElementById("stock").value = p.stock;
-    document.getElementById("editIndex").value = index;
-    switchTab('addProduct', document.getElementById('tabAdd'));
+// Order
+const orderTable=document.getElementById("orderTable");
+orderTable.innerHTML="";
+state.orders
+.map((o,i)=>({...o,index:i}))
+.filter(o=>o.status===currentFilter)
+.forEach(o=>{
+let badge="";
+if(o.status==="pending") badge='<span class="badge bg-primary">Memesan</span>';
+if(o.status==="sold") badge='<span class="badge bg-success">Terjual</span>';
+if(o.status==="canceled") badge='<span class="badge bg-danger">Batal Beli</span>';
+
+orderTable.innerHTML+=`
+<tr>
+<td>${o.name}</td>
+<td>${o.buyer}</td>
+<td>${o.qty}</td>
+<td>${badge}</td>
+<td>
+${o.status==="pending"?
+`<button class="btn btn-success btn-sm" onclick="markSold(${o.index})">Terjual</button>
+<button class="btn btn-danger btn-sm" onclick="markCanceled(${o.index})">Batal</button>`
+:"-"}
+</td>
+</tr>`;
+});
+
+document.getElementById("revenue").textContent=state.revenue.toLocaleString();
+updateChart();
 }
 
-// Delete Product
-function deleteProduct(index){
-    if(!confirm("Yakin hapus produk ini?")) return;
-    state.products.splice(index,1);
-    save();
-    render();
-    showToast("Produk dihapus!", "danger");
+function markSold(i){
+state.orders[i].status="sold";
+save(); render();
 }
 
-// Initial Render
-switchTab('addProduct', document.getElementById('tabAdd'));
+function markCanceled(i){
+const order=state.orders[i];
+
+// kurangi revenue
+state.revenue-=order.total;
+
+// kembalikan stok
+const product=state.products.find(p=>p.name===order.name);
+if(product){ product.stock+=order.qty; }
+
+state.orders[i].status="canceled";
+save(); render();
+}
+
+function updateChart(){
+const dataCount={};
+state.orders.filter(o=>o.status==="sold").forEach(o=>{
+if(!dataCount[o.name]) dataCount[o.name]=0;
+dataCount[o.name]+=o.qty;
+});
+if(chart) chart.destroy();
+chart=new Chart(document.getElementById("salesChart"),{
+type:"bar",
+data:{labels:Object.keys(dataCount),
+datasets:[{label:"Terjual",data:Object.values(dataCount),backgroundColor:"rgba(0,255,204,0.7)"}]},
+options:{responsive:true}
+});
+}
+
+document.getElementById("productForm").onsubmit=function(e){
+e.preventDefault();
+const name=document.getElementById("name").value.trim();
+const price=parseInt(document.getElementById("price").value);
+const stock=parseInt(document.getElementById("stock").value);
+const editIndex=document.getElementById("editIndex").value;
+
+if(editIndex==="") state.products.push({name,price,stock});
+else state.products[editIndex]={name,price,stock};
+
+this.reset();
+document.getElementById("editIndex").value="";
+save(); render();
+};
+
+document.getElementById("saleForm").onsubmit=function(e){
+e.preventDefault();
+const i=document.getElementById("productSelect").value;
+const qty=parseInt(document.getElementById("qty").value);
+const buyer=document.getElementById("buyerName").value.trim();
+
+if(state.products[i].stock<qty){alert("Stok tidak cukup!");return;}
+
+state.products[i].stock-=qty;
+const total=state.products[i].price*qty;
+state.revenue+=total;
+
+state.history.unshift({time:new Date().toLocaleString(),buyer,name:state.products[i].name,qty,total});
+state.orders.unshift({buyer,name:state.products[i].name,qty,total,status:"pending"});
+
+this.reset();
+save(); render();
+};
+
+function editProduct(i){
+const p=state.products[i];
+document.getElementById("name").value=p.name;
+document.getElementById("price").value=p.price;
+document.getElementById("stock").value=p.stock;
+document.getElementById("editIndex").value=i;
+switchTab('addProduct',document.querySelectorAll(".bottom-nav button")[0]);
+}
+
+function deleteProduct(i){
+if(confirm("Hapus produk?")){
+state.products.splice(i,1);
+save(); render();
+}
+}
+
+switchTab('addProduct',document.querySelectorAll(".bottom-nav button")[0]);
 render();
 </script>
 
